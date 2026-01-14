@@ -1,0 +1,28 @@
+[app]
+# Update admin creds before first run; used for UI login.
+admin_username = "admin"
+admin_password = "changeme"
+address = "0.0.0.0:9000"
+public_url = "http://localhost:9000"
+log_level = "info"
+
+[db]
+host = "listmonk-db"
+port = 5432
+user = "listmonk"
+password = "listmonk"
+database = "listmonk"
+ssl_mode = "disable"
+
+[smtp]
+# Use a real ESP (Mailgun/SendGrid/etc) for deliverability; avoid raw Gmail for blasts.
+host = "smtp.example.com"
+port = 587
+username = "apikey"
+password = "changeme"
+from_email = "Your Name <you@example.com>"
+auth_protocol = "plain"
+max_conns = 10
+
+[privacy]
+unsubscribe_header = true

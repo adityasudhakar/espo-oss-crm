@@ -1,0 +1,6 @@
+{
+    "scriptList": [
+        "__APPEND__",
+        "http://localhost:5000/static/chat-widget.js"
+    ]
+}

@@ -1,0 +1,92 @@
+services:
+  espo-db:
+    image: mariadb:11
+    restart: unless-stopped
+    ports:
+      - "3306:3306"
+    environment:
+      MARIADB_ROOT_PASSWORD: ${ESPO_DB_ROOT_PASSWORD:?set ESPO_DB_ROOT_PASSWORD}
+      MARIADB_DATABASE: ${ESPO_DB_NAME:-espocrm}
+      MARIADB_USER: ${ESPO_DB_USER:-espocrm}
+      MARIADB_PASSWORD: ${ESPO_DB_PASSWORD:?set ESPO_DB_PASSWORD}
+    volumes:
+      - espo-db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mariadb -uroot -p${ESPO_DB_ROOT_PASSWORD} -h127.0.0.1 --protocol=TCP -e 'SELECT 1'"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+
+  espocrm:
+    image: espocrm/espocrm:latest
+    depends_on:
+      espo-db:
+        condition: service_healthy
+    restart: unless-stopped
+    ports:
+      - "${ESPO_PORT:-8080}:80"
+    environment:
+      ESPOCRM_DATABASE_HOST: espo-db
+      ESPOCRM_DATABASE_NAME: ${ESPO_DB_NAME:-espocrm}
+      ESPOCRM_DATABASE_USER: ${ESPO_DB_USER:-espocrm}
+      ESPOCRM_DATABASE_PASSWORD: ${ESPO_DB_PASSWORD:?set ESPO_DB_PASSWORD}
+      ESPOCRM_SITE_URL: ${ESPO_SITE_URL:-http://localhost:8080}
+      ESPOCRM_ADMIN_USERNAME: ${ESPO_ADMIN_USERNAME:-admin}
+      ESPOCRM_ADMIN_PASSWORD: ${ESPO_ADMIN_PASSWORD:?set ESPO_ADMIN_PASSWORD}
+      ESPOCRM_ADMIN_EMAIL: ${ESPO_ADMIN_EMAIL:-you@example.com}
+      TZ: ${TZ:-UTC}
+    volumes:
+      - espo-data:/var/www/html
+
+  listmonk-db:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${LISTMONK_DB_USER:-listmonk}
+      POSTGRES_PASSWORD: ${LISTMONK_DB_PASSWORD:?set LISTMONK_DB_PASSWORD}
+      POSTGRES_DB: ${LISTMONK_DB_NAME:-listmonk}
+    volumes:
+      - listmonk-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${LISTMONK_DB_USER:-listmonk}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  query-service:
+    build: ./query-service
+    restart: unless-stopped
+    ports:
+      - "${QUERY_SERVICE_PORT:-5000}:5000"
+    environment:
+      DB_HOST: espo-db
+      DB_PORT: 3306
+      DB_USER: ${ESPO_DB_USER:-espocrm}
+      DB_PASSWORD: ${ESPO_DB_PASSWORD}
+      DB_NAME: ${ESPO_DB_NAME:-espocrm}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:?set ANTHROPIC_API_KEY}
+    depends_on:
+      espo-db:
+        condition: service_healthy
+
+  listmonk:
+    image: listmonk/listmonk:latest
+    depends_on:
+      listmonk-db:
+        condition: service_healthy
+    restart: unless-stopped
+    ports:
+      - "${LISTMONK_PORT:-9000}:9000"
+    volumes:
+      - ./config/listmonk.config.toml:/config/config.toml:ro
+    command: >
+      sh -c "./listmonk --config /config/config.toml --install --yes &&
+             ./listmonk --config /config/config.toml run"
+    environment:
+      TZ: ${TZ:-UTC}
+
+volumes:
+  espo-data:
+  espo-db-data:
+  listmonk-db-data:

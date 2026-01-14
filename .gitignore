@@ -1,0 +1,21 @@
+# Environment and secrets
+.env
+client_secret*.json
+config/listmonk.config.toml
+
+# Python
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+
+# Screenshots and images (local debugging)
+*.png
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
