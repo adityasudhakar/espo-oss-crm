@@ -92,18 +92,6 @@ python app.py
     └── ARCHITECTURE.md     # System design
 ```
 
-## Coming Back Later
-
-If you shut down and want to resume:
-
-```bash
-cd /path/to/windsurf-project
-docker compose up -d espo-db espocrm
-cd query-service && source venv/bin/activate && python app.py
-```
-
-Your data persists in Docker volumes (`espo-data`, `espo-db-data`).
-
 ## Roadmap
 
 - [ ] Lead scoring from PostHog behavioral data
